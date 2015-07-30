@@ -9,9 +9,13 @@ from idc import *
 from core.objects import GUID, Pointer
 
 
-def update_guids(path_to_db):
+def update_guids(path_to_db, seg_types=None):
     _load_guids_db(path_to_db)
-    for seg_beg in filter(lambda x: getseg(x).type == SEG_DATA, Segments()):
+    if seg_types:
+        filter_expr = lambda x: getseg(x).type in seg_types
+    else:
+        filter_expr = None
+    for seg_beg in filter(filter_expr, Segments()):
         seg_end = SegEnd(seg_beg)
         _process_segment(seg_beg, seg_end)
 
@@ -22,8 +26,8 @@ def _process_segment(seg_beg, seg_end):
         if guid_bytes_le != _zero_guid_bytes and guid_bytes_le != _ffff_guid_bytes:
             guid_name = _guids_db.get(guid_bytes_le, None)
             if guid_name:
-                GUID(addr=addr, name=guid_name)
-
+                guid = GUID(addr=addr, name=guid_name)
+                print "Found %s @ 0x%X" % (guid, addr)
 
 _zero_guid_bytes = b''.join(repeat(b'\x00', 16))
 _ffff_guid_bytes = b''.join(repeat(b'\xFF', 16))
